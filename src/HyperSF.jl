@@ -1,5 +1,7 @@
 include("Functions.jl")
-include("HyperLocal.jl")
+include("../include/HyperLocal.jl")
+include("../include/Helper_Functions.jl")
+include("../include/maxflow.jl")
 
 function HyperSF(Inp, CndT::Float64)
 
