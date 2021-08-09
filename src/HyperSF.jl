@@ -214,7 +214,7 @@ function HyperSF(Inp::Strings, CndT::Float64)
 
     append!(RR, (mx - SZ) / mx * 100)
 
-    return avg_cond
+    return avg_cond, ar_new
 
 end #end of function
 
