@@ -1,5 +1,3 @@
-cd("/Users/aliaghdaei/Desktop/Hypergraph/HypergraphFlowClustering-master/Exp-Amazon/Partitioning/HyperSF/Github/")
-
 using SparseArrays
 using LinearAlgebra
 using Clustering
@@ -9,8 +7,6 @@ using Laplacians
 
 
 include("HyperSF.jl")
-include("Functions.jl")
-include("HyperLocal.jl")
 
 Input = "ibm01.hgr"
 
