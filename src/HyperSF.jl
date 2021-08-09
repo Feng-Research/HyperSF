@@ -205,8 +205,6 @@ function HyperSF(Inp::Strings, CndT::Float64)
 
     end #end of for i
 
-    ar = ar_new
-
     SZ = maximum(idx_coarse) + length(findall(x->x==0, idx_coarse))
 
     #append!(avg_cond, mean(Cvec_FB))
