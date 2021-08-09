@@ -8,7 +8,7 @@ using Laplacians
 
 include("HyperSF.jl")
 
-Input = "../../ibm01.hgr"
+Input = "../data/ibm01.hgr"
 
 #Threshold on the conductance of the selected clusters; the lower, the better
 CndT = 0.3
