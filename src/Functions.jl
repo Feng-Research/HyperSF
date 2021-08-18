@@ -233,7 +233,7 @@ function he_cluster14(idx::Array{Int64,1}, ar::Array{Any,1}, Hscore::Array{Float
 
     end
 
-    E = sortperm(ss, rev=false)
+    E = sortperm(ss, rev=true)
 
     for iter2 = 1:length(E)
 
