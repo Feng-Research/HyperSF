@@ -3,7 +3,7 @@ include("../include/HyperLocal.jl")
 include("../include/Helper_Functions.jl")
 include("../include/maxflow.jl")
 
-function HyperSF(Inp::Strings, CndT::Float64)
+function HyperSF(Inp, CndT)
 
 
     avg_cond = zeros(Float64, 0)
