@@ -19,3 +19,8 @@ AC, ar_coarse = HyperSF(Input, CndT)
 
 # The incidence matrix corresponding to the coarsened hypergraph
 H = INC3(ar_coarse)
+
+
+## Generate the output hypergraph in hMetis format
+# First line: #hyperedges, #nodes
+Whgr("Output.hgr", ar_coarse)
