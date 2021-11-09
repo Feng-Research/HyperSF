@@ -278,3 +278,19 @@ function nonunique2!(x::AbstractArray{T}) where T
     end
     duplicatedvector
 end
+  
+    
+# Write the output matrix in hMetis format
+function Whgr(input, ar)
+    mx = mx_func(ar)
+    open(input,"w")do io
+        println(io, length(ar)," ", mx)
+        for i =1:length(ar)
+            nds = ar[i]
+            for j =1:length(nds)
+                print(io, nds[j], " ")
+            end
+            println(io)
+        end
+    end
+end
