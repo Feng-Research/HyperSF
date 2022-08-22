@@ -12,15 +12,15 @@ include("../include/maxflow.jl")
 
 filename = "ibm01.hgr"
 
-## L controls the coarsening ratio by applying L-levels of k-mean clustering
+## L: is an integer (L>0) to adjust the initial coarsening ratio before applying the flow-based technique.
 L = 4
 
 ## R adjusts the ratio of selected clusters (low-quality clusters)
-# for applying the flow-based technique (0<R<=1)
+# for applying the flow-based technique (0<R<=1).
 R = .1
 
 ## IDN is the index cluster that is assigned to each node
-IDN = HyperSF(filename, L, R)
+IDN = HyperSF(filename, L, R).
 
 
 
