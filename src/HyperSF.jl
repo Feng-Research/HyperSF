@@ -1,220 +1,176 @@
-include("Functions.jl")
-include("../include/HyperLocal.jl")
-include("../include/Helper_Functions.jl")
-include("../include/maxflow.jl")
-
-function HyperSF(Inp, CndT)
-
-
-    avg_cond = zeros(Float64, 0)
-    kway_cond = zeros(Float64, 0)
-    sz_mat = zeros(Int, 0)
-    RR = zeros(Float64, 0)
-    ## parameters
-    grow_lvl = 2
-
-    grownum = 100
-    k = 10
-    metis_P = 100
-
-
-    Cvec_lvl = Any[]
-
-    idx_mat = Any[]
-
+function HyperSF(Inp, L, R)
+    
+    cd("../data/")
     ar = ReadInp(Inp)
+    cd("../src/")
 
-    NH = HyperNodes(ar)
+    ## Decomposition
+    ar_new, idx_mat, SV = decomposition(ar, L)
 
-    H = INC3(ar)
+    idx = idx_mat[end]
+    ## Computing the effective resistance diameter of clusters and sort them
+    dict = Dict{Any, Any}()
+    @inbounds for jj =1:length(idx)
 
-    mx = mx_func(ar)
+        vals = get!(Vector{Int}, dict, idx[jj])
 
-    MM = Star(ar)
+        push!(vals, jj)
 
+    end # for jj
 
-    ## generate 10 random vectors
-    RD = (rand(Float64, size(MM,1), 10) .- 0.5).*2
+    KS = collect(keys(dict))
 
-    SV = Filter(RD, k, MM, mx)
+    VL = collect(values(dict))
 
-    Hscore = h_score3(ar ,SV)
+    score = zeros(eltype(SV), length(VL))
+    @inbounds for i =1:length(VL)
+        nodes = VL[i]
+        for j in axes(SV, 2)
+            mx, mn = -Inf, +Inf
+            for node in nodes
+                x = SV[node, j]
+                mx = ifelse(x > mx, x, mx)
+                mn = ifelse(x < mn, x, mn)
+            end
+            score[i] += (mx - mn)^2
+        end
+    end
 
-    idx = zeros(Int, mx)
+    fdP = sortperm(score)
+    RT = round(Int, R * length(fdP))
+    fdC = fdP[1: RT]
 
-    idx_new = he_cluster14(idx, ar, Hscore, SV, mx)
+    CL1 = KS[fdC]
+    ## end of Computing the effective resistance diameter of clusters
 
-    ## Applying Metis
-    N = round(Int, mx/metis_P)
+    ## flow-based
+    mx = mxF(ar_new)
+    grow_lvl=3
+    NH = HyperNodes(ar_new)
+    H = INC(ar_new)
+    flag2 = falses(mx)
+    val = 1
+    idx2 = zeros(Int, mx)
+    grownum=3
+    cond_thresh=1
 
-    P = Metis.partition(MM, N)
-    P = P[1:mx]
+    for ii = 1:length(fdC)
 
-    flag = falses(mx)
+        seedN = CL1[ii]
 
-    idx_coarse = zeros(Int, mx)
+        ## expanding the network around the seed nodes
+        nd = copy(seedN)
 
-    val = 0
+        HE = Any[]
 
-    Cvec_FB = zeros(Float64, 0)
+        for ee = 1:grow_lvl
 
-    cut_mat = zeros(Int, 0)
+            HE = Any[]
 
-    vol_mat = zeros(Int, 0)
+            for dd = 1:length(nd)
 
+                append!(HE, NH[nd[dd]])
 
-    Threads.@threads for loop = 1:N
+            end
 
-        nd_met = findall(x->x==loop, P)
+            HE = sort(unique(HE))
 
-        ## finding the clusters each node belongs to
-        CL = idx_new[nd_met]
+            new_nd = Any[]
 
-        ## finding non-unique cluster
-        NU = nonunique2!(CL)
+            for mm=1:length(HE)
 
-        for ii = 1:length(NU)
+                nnd = ar_new[HE[mm]]
 
-            fd1 = findall(x->x==NU[ii], CL)
+                append!(new_nd, nnd)
 
-            nd1 = nd_met[fd1]
+            end #end of mm
 
-            seedN = nd1[.!flag[nd1]]
+            nd = sort(unique(new_nd))
 
-            if length(seedN)>1
+        end #end of grow_lvl
 
-                ## expanding the network around the seed nodes
-                nd = copy(seedN)
+        seedN2 = findall(x->in(x, seedN), nd)
 
-                HE = Any[]
+        IM = H[HE, nd]
 
-                for ee = 1:grow_lvl
+        IMt = sparse(IM')
 
-                    HE = Any[]
+        ## d is node degree
+        d = vec(sum(IM,dims=1))
 
-                    for dd = 1:length(nd)
+        epsilon = 1.0
 
-                        append!(HE, NH[nd[dd]])
+        delta = 1.0
 
-                    end
+        order = round.(Int, sum(IM, dims = 2))
+        order = order[:,1]
 
-                    HE = sort(unique(HE))
 
-                    new_nd = Any[]
+        OneHop = get_immediate_neighbors(IM,IMt,seedN2)
+        Rmore = BestNeighbors(IM,d,seedN2,OneHop,grownum)
+        R = union(Rmore,seedN2)
+        Rs = findall(x->in(x,seedN2),R)  #Force
 
-                    for mm=1:length(HE)
+        S, lcond = HyperLocal(IM,IMt,order,d,R,epsilon,delta,Rs,true)
 
-                        nnd = ar[HE[mm]]
+        volA = sum(d)
 
-                        append!(new_nd, nnd)
+        S_org = nd[S]
 
-                    end #end of mm
+        ## finding the not discovered nodes
+        fgs = flag2[S_org]
 
-                    nd = sort(unique(new_nd))
+        S_org2 = S_org[.!fgs]
 
-                end #end of grow_lvl
+        if length(S_org2) > 50
 
-                seedN2 = findall(x->in(x, seedN), nd)
+            S_org2 = S_org2[1:50]
+        end
 
 
-                IM = H[HE, nd]
-                #println("size(IM): ", size(IM))
+        if length(S_org2) > 0
 
-                IMt = sparse(IM')
+            S3 = findall(x->in(x, S_org2), nd)
 
-                ## d is node degree
-                d = vec(sum(IM,dims=1))
+            condR,volR, cutR = tl_cond(IM,S3,d,delta,volA,order)
 
-                epsilon = 1.0
+            if condR < cond_thresh
 
-                delta = 1.0
+                idx2[S_org2] .= val
 
-                order = round.(Int, sum(IM, dims = 2))
-                order = order[:,1]
+                flag2[S_org2] .= 1
 
+                val+=1
 
-                OneHop = get_immediate_neighbors(IM,IMt,seedN2)
-                Rmore = BestNeighbors(IM,d,seedN2,OneHop,grownum)
-                R = union(Rmore,seedN2)
-                #Rs = findall(x->in(x,seedN),R)  #Force
-                Rs = findall(x->in(x,seedN2),R)  #Force
+            end
 
-                S, lcond = HyperLocal(IM,IMt,order,d,R,epsilon,delta,Rs,true)
+        end#end of if S_org2
 
-                volA = sum(d)
 
-                S_org = nd[S]
+    end #for ii
 
-                S_met = findall(x->in(x, S_org), nd_met)
 
-                S_org = nd_met[S_met]
+    ## indexing the isolated nodes
+    fdz = findall(x-> x==0, idx2)
 
-                ## finding the not discovered nodes
-                fgs = flag[S_org]
+    fdnz = findall(x-> x!=0, idx2)
 
-                S_org2 = S_org[.!fgs]
+    V = vec(val:val+length(fdz)-1)
 
-                if length(S_org2) > 0
+    idx2[fdz] = V
 
-                    S3 = findall(x->in(x, S_org2), nd)
+    push!(idx_mat, idx2)
 
-                    condR,volR, cutR = tl_cond(IM,S3,d,delta,volA,order)
+    ## Mapper
 
-                    if condR < CndT
+    idx1 = 1:maximum(idx_mat[end])
 
-                        append!(Cvec_FB, condR)
+    @inbounds for ii = length(idx_mat):-1:1
 
-                        idx_coarse[S_org2] .= val
+        idx1 = idx1[idx_mat[ii]]
 
-                        flag[S_org2] .= 1
+    end # for ii
 
-                        val+=1
+    return idx1
 
-                    end
-
-                end#end of if S_org2
-
-
-            end #end of if seedN
-
-        end #end of for ii
-
-    end #end of loop N
-
-
-    mx_idx = maximum(idx_coarse)
-
-    fd_ssz = findall(x->x==0, idx_coarse)
-
-    vec1 = collect(mx_idx + 1 : mx_idx + length(fd_ssz))
-
-    idx_coarse[fd_ssz] = vec1
-
-    push!(idx_mat, idx_coarse)
-
-    ar_new = Any[]
-
-    for i =1:length(ar)
-
-        nd = ar[i]
-
-        new_nd = idx_coarse[nd]
-
-        push!(ar_new, new_nd)
-
-
-    end #end of for i
-
-    SZ = maximum(idx_coarse) + length(findall(x->x==0, idx_coarse))
-
-    #append!(avg_cond, mean(Cvec_FB))
-    append!(avg_cond, (sum(Cvec_FB)) / length(Cvec_FB))
-
-    append!(sz_mat, SZ)
-
-    append!(RR, (mx - SZ) / mx * 100)
-
-    return avg_cond, ar_new
-
-end #end of function
-
+end # function
