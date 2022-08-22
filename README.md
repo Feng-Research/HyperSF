@@ -1,12 +1,39 @@
 # HyperSF
-HyperSF: Spectral Hypergraph Coarsening via Flow-based Local Clustering (Accepted by ICCAD'21) 
-Link to the paper: https://arxiv.org/abs/2108.07901)
+Spectral Hypergraph Coarsening Code for
 
-Authors: Ali Aghdaei, Zhiqiang Zhao, Zhuo Feng
+HyperSF: Spectral Hypergraph Coarsening via Flow-based Local Clustering 
+https://ieeexplore.ieee.org/document/9643555/metrics#metrics
 
-Abstract:
-Hypergraphs allow modeling problems with multi-way high-order relationships. However, the computational cost of most existing hypergraph-based algorithms can be heavily dependent upon the input hypergraph sizes. To address the ever-increasing computational challenges, graph coarsening can be potentially applied for preprocessing a given hypergraph by aggressively aggregating its vertices (nodes). However, state-of-the-art hypergraph partitioning (clustering) methods that incorporate heuristic graph coarsening techniques are not optimized for preserving the structural (global) properties of hypergraphs. In this work, we propose an efficient spectral hypergraph coarsening scheme (HyperSF) for well preserving the original spectral (structural) properties of hypergraphs. Our approach leverages a recent strongly-local max-flow-based clustering algorithm for detecting the sets of hypergraph vertices that minimize ratio cut. To further improve the algorithm efficiency, we propose a divide-and-conquer scheme by leveraging spectral clustering of the bipartite graphs corresponding to the original hypergraphs. Our experimental results for a variety of hypergraphs extracted from real-world VLSI design benchmarks show that the proposed hypergraph coarsening algorithm can significantly improve the multi-way conductance of hypergraph clustering as well as runtime efficiency when compared with existing state-of-the-art algorithms.
+Ali Aghdaei, Zhiqiang Zhao, Zhuo Feng
 
-Julia Version: 1.5.3
 
 ![Overview7 (1)](https://user-images.githubusercontent.com/85693952/128752511-64572dd2-aff6-4126-9290-c91a78b4c649.png)
+
+# Requirements
+Julia Version: 1.5.3
+
+Packages:
+
+SparseArrays
+
+LinearAlgebra
+
+MatrixNetworks v1.0.1
+
+RandomV06 v0.0.2
+
+# Testing 
+Run "Run_experiment.jl" to generate the coarsened hypergraph for the availble test cases.
+
+# Input
+The input format is in the format of hMetis that is every line corresponds to each hyperedge.
+The first line: #hyperedges, #nodes.
+
+L: is an integer (L>0) to adjust the initial coarsening ratio before applying the flow-based technique 
+
+R: the ratio of selected clusters (low-quality clusters) for applying the flow-based technique (0<R<=1).
+
+# Output
+IDN: returns the assigned cluster to each node.
+
+The code generate the coarsened hypergraph as "Out.hgr" as the same format of input hypergraph.
