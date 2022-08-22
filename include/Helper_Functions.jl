@@ -1,8 +1,3 @@
-using SparseArrays
-using MAT
-using MatrixNetworks
-using LinearAlgebra
-
 # Controlled growth from a seed set R in a hypergraph. Look at the one hop
 # neighborhood, and order all of those nodes by how many hyperedges they are in
 # that have nodes from R. Order that last, and take the top k
