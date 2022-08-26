@@ -6,6 +6,7 @@ https://ieeexplore.ieee.org/document/9643555/metrics#metrics
 
 Ali Aghdaei, Zhiqiang Zhao, Zhuo Feng
 
+This is the improved version of HyperSF incorporating effective resistance clustering method.
 
 ![Overview7 (1)](https://user-images.githubusercontent.com/85693952/128752511-64572dd2-aff6-4126-9290-c91a78b4c649.png)
 
