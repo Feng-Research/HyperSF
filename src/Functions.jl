@@ -198,7 +198,7 @@ function HyperNodes(ar)
 
 end
 
-## Input: hypergraph array, levels of coarsening using k-mean clustering
+## Input: hypergraph array, levels of coarsening using effective resistance based clustering method
 # Output: the cluster indices of every node
 function decomposition(ar, L)
 
